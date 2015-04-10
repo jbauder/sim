@@ -24,6 +24,52 @@ CompileAllAgentsStepData <- function(sim = sim) {
   return(all_step_data)
 }
 
+# CreateBirthDate Function -----------------------------------------------------
+
+### Creates a column in the input data frame specifying each agent's birth date
+### baed on its specified age
+### Usage: CreateBirthDate(input)
+### Arguments: input = a data frame containing the agents used to start the model.
+###              Must containing a column specifying "age" as a numeric value.
+### Returns: The input data frame with a column "birth_date" containing each agent's
+###              birth_date as a POSIXct object.
+### Notes: 
+### Javan Bauder
+### 2015.04.10
+
+CreateBirthDate <- function(input = input){
+  # Only proceed if there is no birth_date column
+  if(is.null(input$birth_date)){
+    # Loop through each row in the input
+    for(a in 1:nrow(input)){
+      # Is the age_period a year?
+      if(ExtractUnitFromPeriod(age_period)=="year"){
+        # Determine the first sim_start date after the birth_day
+        s0 <- as.Date(pars$universal$sim_start - (age_period*input$age[a]))
+        # Set the format of the birth_day
+        birth_day_format <- guess_formats(birth_day,"dm")
+        birth_day_format <- paste(birth_day_format,"%Y",sep="")
+        # Determine the first birth_day after s0
+        s1 <- as.Date(paste(birth_day,year(s0),sep=""),format=birth_day_format)
+        if(s0 >= s1) {
+          input$birth_date[a] <- as.character(s1)
+        } else {
+          input$birth_date[a] <- as.character(s1-age_period)
+        }
+      } else {
+        # If age period is not a year
+        age_period_unit <- ExtractUnitFromPeriod(age_period)
+        input$birth_date[a] <- as.character(pars$universal$sim_start - (age_period*input$age[a]))
+      }
+    }
+  }
+  # Convert birth_date to a POSIXct object
+  input$birth_date<-as.POSIXct(input$birth_date,tz="UTC")  
+  return(input)
+}
+
+
+
 # CreateRunsList Function ------------------------------------------------------
 
 ###  Helper function for RunSimulation(). Creates a list of empty objects, each 
